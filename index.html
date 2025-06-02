@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Поиск пакетов</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: auto;
+    }
+
+    .filters {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+
+    .filters label {
+      display: flex;
+      flex-direction: column;
+      font-size: 14px;
+    }
+
+    .filters input {
+      width: 80px;
+      margin-top: 5px;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    .card img {
+      max-width: 100%;
+      height: auto;
+      margin: 10px 0;
+    }
+
+    .card a {
+      display: inline-block;
+      margin-top: 10px;
+      color: #007BFF;
+      text-decoration: none;
+    }
+    .card a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>🔍 Поиск пакетов по размерам</h1>
+
+  <div class="filters">
+    <label>Ширина:
+      <input type="number" id="min-width" placeholder="Мин"> –
+      <input type="number" id="max-width" placeholder="Макс">
+    </label>
+
+    <label>Высота:
+      <input type="number" id="min-height" placeholder="Мин"> –
+      <input type="number" id="max-height" placeholder="Макс">
+    </label>
+
+    <label>Глубина:
+      <input type="number" id="min-depth" placeholder="Мин"> –
+      <input type="number" id="max-depth" placeholder="Макс">
+    </label>
+
+    <button onclick="filterPacks()">Фильтровать</button>
+    <button onclick="resetFilters()">Сбросить</button>
+  </div>
+
+  <div id="results" class="gallery"></div>
+</div>
+
+<script>
+  const allPacks = [
+    // ВАШИ ФАЙЛЫ
+    { size: "120×200×120", print_area: "494 × 320", name_jpeg: "Пакет 120x200x120 мм (494 x 320 мм целый).jpeg", name_svg: "Пакет 120x200x120 мм (494 x 320 мм целый).svg" },
+    { size: "125×400×125", print_area: "514 × 523", name_jpeg: "Пакет 125x400x125 мм (514 x 523 мм целый).jpeg", name_svg: "Пакет 125x400x125 мм (514 x 523 мм целый).svg" },
+    { size: "130×170×70", print_area: "414 × 265", name_jpeg: "Пакет 130x170x70 мм (414 x 265 мм целый).jpeg", name_svg: "Пакет 130x170x70 мм (414 x 265 мм целый).svg" },
+    { size: "130×380×130", print_area: "534 × 505", name_jpeg: "Пакет 130x380x130 мм (534 x 505 мм целый).jpeg", name_svg: "Пакет 130x380x130 мм (534 x 505 мм целый).svg" },
+    { size: "160×225×70", print_area: "474 × 320", name_jpeg: "Пакет 160x225x70 мм (474 x 320 мм целый).jpeg", name_svg: "Пакет 160x225x70 мм (474 x 320 мм целый).svg" },
+    { size: "180×200×100", print_area: "294 × 310", name_jpeg: "Пакет 180x200x100 мм (294 x 310 мм половина).jpeg", name_svg: "Пакет 180x200x100 мм (294 x 310 мм половина).svg" },
+    { size: "200×150×100", print_area: "614 × 260", name_jpeg: "Пакет 200x150x100 мм (614 x 260 мм целый).jpeg", name_svg: "Пакет 200x150x100 мм (614 x 260 мм целый).svg" },
+    { size: "200×180×50", print_area: "514 × 265", name_jpeg: "Пакет 200x180x50 мм (514 x 265 мм целый).jpeg", name_svg: "Пакет 200x180x50 мм (514 x 265 мм целый).svg" },
+    { size: "200×300×120", print_area: "654 × 420", name_jpeg: "Пакет 200x300x120 мм (654 x 420 мм целый).jpeg", name_svg: "Пакет 200x300x120 мм (654 x 420 мм целый).svg" },
+    { size: "200×400×120", print_area: "334 × 520", name_jpeg: "Пакет 200x400x120 мм (334 x 520 мм половина).jpeg", name_svg: "Пакет 200x400x120 мм (334 x 520 мм половина).svg" },
+    { size: "230×300×90", print_area: "334 × 405", name_jpeg: "Пакет 230x300x90 мм (334 x 405 мм половина).jpeg", name_svg: "Пакет 230x300x90 мм (334 x 405 мм половина).svg" },
+    { size: "230×310×100", print_area: "674 × 420", name_jpeg: "Пакет 230x310x100 мм (674 x 420 мм целый).jpeg", name_svg: "Пакет 230x310x100 мм (674 x 420 мм целый).svg" },
+    { size: "230×320×80", print_area: "634 × 420", name_jpeg: "Пакет 230x320x80 мм (634 x 420 мм целый).jpeg", name_svg: "Пакет 230x320x80 мм (634 x 420 мм целый).svg" },
+    { size: "230×320×100", print_area: "344 × 430", name_jpeg: "Пакет 230x320x100 мм (344 x 430 мм половина).jpeg", name_svg: "Пакет 230x320x100 мм (344 x 430 мм половина).svg" },
+    { size: "230×355×125", print_area: "369 × 478", name_jpeg: "Пакет 230x355x125 мм (369 x 478 мм половина).jpeg", name_svg: "Пакет 230x355x125 мм (369 x 478 мм половина).svg" },
+    { size: "235×365×120", print_area: "369 × 485", name_jpeg: "Пакет 235x365x120 мм (369 x 485 мм половина).jpeg", name_svg: "Пакет 235x365x120 мм (369 x 485 мм половина).svg" },
+    { size: "240×270×180", print_area: "434 × 420", name_jpeg: "Пакет 240x270x180 мм (434 x 420 мм половина).jpeg", name_svg: "Пакет 240x270x180 мм (434 x 420 мм половина).svg" },
+    { size: "240×297×180", print_area: "854 × 447", name_jpeg: "Пакет 240x297x180 мм (854 x 447 мм целый).jpeg", name_svg: "Пакет 240x297x180 мм (854 x 447 мм целый).svg" },
+    { size: "240×320×70", print_area: "634 × 415", name_jpeg: "Пакет 240x320x70 мм (634 x 415 мм целый).jpeg", name_svg: "Пакет 240x320x70 мм (634 x 415 мм целый).svg" },
+    { size: "240×350×100", print_area: "694 × 460", name_jpeg: "Пакет 240x350x100 мм (694 x 460 мм целый).jpeg", name_svg: "Пакет 240x350x100 мм (694 x 460 мм целый).svg" },
+    { size: "245×350×95", print_area: "694 × 458", name_jpeg: "Пакет 245x350x95 мм (694 x 458 мм целый).jpeg", name_svg: "Пакет 245x350x95 мм (694 x 458 мм целый).svg" },
+    { size: "245×365×60", print_area: "624 × 455", name_jpeg: "Пакет 245x365x60 мм (624 x 455 мм целый).jpeg", name_svg: "Пакет 245x365x60 мм (624 x 455 мм целый).svg" },
+    { size: "250×350×90", print_area: "694 × 455", name_jpeg: "Пакет 250x350x90 мм (694 x 455 мм целый).jpeg", name_svg: "Пакет 250x350x90 мм (694 x 455 мм целый).svg" },
+    { size: "250×350×100", print_area: "364 × 460", name_jpeg: "Пакет 250x350x100 мм (364 x 460 мм половина).jpeg", name_svg: "Пакет 250x350x100 мм (364 x 460 мм половина).svg" },
+    { size: "250×350×120", print_area: "384 × 470", name_jpeg: "Пакет 250x350x120 мм (384 x 470 мм половина).jpeg", name_svg: "Пакет 250x350x120 мм (384 x 470 мм половина).svg" },
+    { size: "250×360×80", print_area: "674 × 460", name_jpeg: "Пакет 250x360x80 мм (674 x 460 мм целый).jpeg", name_svg: "Пакет 250x360x80 мм (674 x 460 мм целый).svg" },
+    { size: "250×400×150", print_area: "414 × 535", name_jpeg: "Пакет 250x400x150 мм (414 x 535 мм половина).jpeg", name_svg: "Пакет 250x400x150 мм (414 x 535 мм половина).svg" },
+    { size: "260×200×150", print_area: "424 × 335", name_jpeg: "Пакет 260x200x150 мм (424 x 335 мм половина).jpeg", name_svg: "Пакет 260x200x150 мм (424 x 335 мм половина).svg" },
+    { size: "260×330×80", print_area: "694 × 430", name_jpeg: "Пакет 260x330x80 мм (694 x 430 мм целый).jpeg", name_svg: "Пакет 260x330x80 мм (694 x 430 мм целый).svg" },
+    { size: "260×360×150", print_area: "424 × 495", name_jpeg: "Пакет 260x360x150 мм (424 x 495 мм половина).jpeg", name_svg: "Пакет 260x360x150 мм (424 x 495 мм половина).svg" },
+    { size: "260×380×80", print_area: "694 × 480", name_jpeg: "Пакет 260x380x80 мм (694 x 480 мм целый).jpeg", name_svg: "Пакет 260x380x80 мм (694 x 480 мм целый).svg" },
+    { size: "270×400×120", print_area: "404 × 520", name_jpeg: "Пакет 270x400x120 мм (404 x 520 мм половина).jpeg", name_svg: "Пакет 270x400x120 мм (404 x 520 мм половина).svg" },
+    { size: "275×330×70", print_area: "359 × 425", name_jpeg: "Пакет 275x330x70 мм (359 x 425 мм половина).jpeg", name_svg: "Пакет 275x330x70 мм (359 x 425 мм половина).svg" },
+    { size: "290×360×120", print_area: "424 × 480", name_jpeg: "Пакет 290x360x120 мм (424 x 480 мм половина).jpeg", name_svg: "Пакет 290x360x120 мм (424 x 480 мм половина).svg" },
+    { size: "300×260×180", print_area: "494 × 410", name_jpeg: "Пакет 300x260x180 мм (494 x 410 мм половина).jpeg", name_svg: "Пакет 300x260x180 мм (494 x 410 мм половина).svg" },
+    { size: "300×400×120", print_area: "434 × 520", name_jpeg: "Пакет 300x400x120 мм (434 x 520 мм половина).jpeg", name_svg: "Пакет 300x400x120 мм (434 x 520 мм половина).svg" },
+    { size: "300×450×140", print_area: "454 × 580", name_jpeg: "Пакет 300x450x140 мм (454 x 580 мм половина).jpeg", name_svg: "Пакет 300x450x140 мм (454 x 580 мм половина).svg" },
+    { size: "310×450×120", print_area: "444 × 570", name_jpeg: "Пакет 310x450x120 мм (444 x 570 мм половина).jpeg", name_svg: "Пакет 310x450x120 мм (444 x 570 мм половина).svg" },
+    { size: "320×420×100", print_area: "434 × 530", name_jpeg: "Пакет 320x420x100 мм (434 x 530 мм половина).jpeg", name_svg: "Пакет 320x420x100 мм (434 x 530 мм половина).svg" },
+    { size: "330×330×80", print_area: "424 × 430", name_jpeg: "Пакет 330x330x80 мм (424 x 430 мм половина).jpeg", name_svg: "Пакет 330x330x80 мм (424 x 430 мм половина).svg" },
+    { size: "330×400×150", print_area: "494 × 535", name_jpeg: "Пакет 330x400x150 мм (494 x 535 мм половина).jpeg", name_svg: "Пакет 330x400x150 мм (494 x 535 мм половина).svg" },
+    { size: "350×245×95", print_area: "904 × 353", name_jpeg: "Пакет 350x245x95 мм (904 x 353 мм целый).jpeg", name_svg: "Пакет 350x245x95 мм (904 x 353 мм целый).svg" },
+    { size: "350×250×120", print_area: "484 × 370", name_jpeg: "Пакет 350x250x120 мм (484 x 370 мм половина).jpeg", name_svg: "Пакет 350x250x120 мм (484 x 370 мм половина).svg" },
+    { size: "350×270×140", print_area: "504 × 400", name_jpeg: "Пакет 350x270x140 мм (504 x 400 мм половина).jpeg", name_svg: "Пакет 350x270x140 мм (504 x 400 мм половина).svg" },
+    { size: "350×280×60", print_area: "424 × 370", name_jpeg: "Пакет 350x280x60 мм (424 x 370 мм половина).jpeg", name_svg: "Пакет 350x280x60 мм (424 x 370 мм половина).svg" },
+    { size: "350×300×140", print_area: "504 × 430", name_jpeg: "Пакет 350x300x140 мм (504 x 430 мм половина).jpeg", name_svg: "Пакет 350x300x140 мм (504 x 430 мм половина).svg" },
+    { size: "350×320×220", print_area: "584 × 490", name_jpeg: "Пакет 350x320x220 мм (584 x 490 мм половина).jpeg", name_svg: "Пакет 350x320x220 мм (584 x 490 мм половина).svg" },
+    { size: "350×380×120", print_area: "484 × 500", name_jpeg: "Пакет 350x380x120 мм (484 x 500 мм половина).jpeg", name_svg: "Пакет 350x380x120 мм (484 x 500 мм половина).svg" },
+    { size: "350×400×100", print_area: "464 × 510", name_jpeg: "Пакет 350x400x100 мм (464 x 510 мм половина).jpeg", name_svg: "Пакет 350x400x100 мм (464 x 510 мм половина).svg" },
+    { size: "350×450×100", print_area: "464 × 560", name_jpeg: "Пакет 350x450x100 мм (464 x 560 мм половина).jpeg", name_svg: "Пакет 350x450x100 мм (464 x 560 мм половина).svg" },
+    { size: "355×295×80", print_area: "449 × 395", name_jpeg: "Пакет 355x295x80 мм (449 x 395 мм половина).jpeg", name_svg: "Пакет 355x295x80 мм (449 x 395 мм половина).svg" },
+    { size: "360×320×120", print_area: "494 × 440", name_jpeg: "Пакет 360x320x120 мм (494 x 440 мм половина).jpeg", name_svg: "Пакет 360x320x120 мм (494 x 440 мм половина).svg" },
+    { size: "380×380×170", print_area: "564 × 525", name_jpeg: "Пакет 380x380x170 мм (564 x 525 мм половина).jpeg", name_svg: "Пакет 380x380x170 мм (564 x 525 мм половина).svg" },
+    { size: "400×270×120", print_area: "534 × 390", name_jpeg: "Пакет 400x270x120 мм (534 x 390 мм половина).jpeg", name_svg: "Пакет 400x270x120 мм (534 x 390 мм половина).svg" },
+    { size: "400×300×120", print_area: "534 × 420", name_jpeg: "Пакет 400x300x120 мм (534 x 420 мм половина).jpeg", name_svg: "Пакет 400x300x120 мм (534 x 420 мм половина).svg" },
+    { size: "410×290×135", print_area: "559 × 418", name_jpeg: "Пакет 410x290x135 мм (559 x 418 мм половина).jpeg", name_svg: "Пакет 410x290x135 мм (559 x 418 мм половина).svg" },
+    { size: "410×398×138", print_area: "562 × 527", name_jpeg: "Пакет 410x398x138 мм (562 x 527 мм половина).jpeg", name_svg: "Пакет 410x398x138 мм (562 x 527 мм половина).svg" },
+    { size: "420×297×100", print_area: "534 × 407", name_jpeg: "Пакет 420x297x100 мм (534 x 407 мм половина).jpeg", name_svg: "Пакет 420x297x100 мм (534 x 407 мм половина).svg" },
+    { size: "450×350×140", print_area: "604 × 480", name_jpeg: "Пакет 450x350x140 мм (604 x 480 мм половина).jpeg", name_svg: "Пакет 450x350x140 мм (604 x 480 мм половина).svg" },
+    { size: "470×420×160", print_area: "664 × 560", name_jpeg: "Пакет 470x420x160 мм (664 x 560 мм половина).jpeg", name_svg: "Пакет 470x420x160 мм (664 x 560 мм половина).svg" },
+    { size: "500×350×200", print_area: "714 × 510", name_jpeg: "Пакет 500x350x200 мм (714 x 510 мм половина).jpeg", name_svg: "Пакет 500x350x200 мм (714 x 510 мм половина).svg" },
+
+    // НЕ ХВАТАЛО
+    { size: "300×360×120", print_area: "494 × 410", name_jpeg: "Пакет 300x360x120 мм (494 x 410 мм половина).jpeg", name_svg: "Пакет 300x360x120 мм (494 x 410 мм половина).svg" },
+    { size: "300×400×120", print_area: "434 × 520", name_jpeg: "Пакет 300x400x120 мм (434 x 520 мм половина).jpeg", name_svg: "Пакет 300x400x120 мм (434 x 520 мм половина).svg" }
+  ];
+
+  function getDim(sizeStr, index) {
+    return parseInt(sizeStr.split("×")[index]);
+  }
+
+  function displayPacks(packs) {
+    const container = document.getElementById("results");
+    container.innerHTML = "";
+
+    if (packs.length === 0) {
+      container.innerHTML = "<p>Ничего не найдено.</p>";
+      return;
+    }
+
+    packs.forEach(pack => {
+      const div = document.createElement("div");
+      div.className = "card";
+      div.innerHTML = `
+        <h3>${pack.size}</h3>
+        <p>Печатное поле: ${pack.print_area}</p>
+        <img src="images/${pack.name_jpeg}" alt="${pack.size}">
+        <br>
+        <a href="svgs/${pack.name_svg}" download>📥 Скачать SVG</a>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function filterPacks() {
+    const mw = parseInt(document.getElementById("min-width").value);
+    const Mw = parseInt(document.getElementById("max-width").value);
+    const mh = parseInt(document.getElementById("min-height").value);
+    const Mh = parseInt(document.getElementById("max-height").value);
+    const md = parseInt(document.getElementById("min-depth").value);
+    const Md = parseInt(document.getElementById("max-depth").value);
+
+    let filtered = [...allPacks];
+
+    if (!isNaN(mw)) filtered = filtered.filter(p => getDim(p.size, 0) >= mw);
+    if (!isNaN(Mw)) filtered = filtered.filter(p => getDim(p.size, 0) <= Mw);
+    if (!isNaN(mh)) filtered = filtered.filter(p => getDim(p.size, 1) >= mh);
+    if (!isNaN(Mh)) filtered = filtered.filter(p => getDim(p.size, 1) <= Mh);
+    if (!isNaN(md)) filtered = filtered.filter(p => getDim(p.size, 2) >= md);
+    if (!isNaN(Md)) filtered = filtered.filter(p => getDim(p.size, 2) <= Md);
+
+    displayPacks(filtered);
+  }
+
+  function resetFilters() {
+    document.querySelectorAll(".filters input").forEach(i => i.value = "");
+    displayPacks(allPacks);
+  }
+
+  displayPacks(allPacks);
+</script>
+
+</body>
+</html>
