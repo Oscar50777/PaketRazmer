@@ -10,12 +10,10 @@
       margin: 0;
       padding: 20px;
     }
-
     .container {
       max-width: 1200px;
       margin: auto;
     }
-
     .filters {
       background: white;
       padding: 20px;
@@ -27,18 +25,15 @@
       align-items: center;
       margin-bottom: 30px;
     }
-
     .filters label {
       display: flex;
       flex-direction: column;
       font-size: 14px;
     }
-
     .filters input {
       width: 80px;
       margin-top: 5px;
     }
-
     button {
       margin-top: 20px;
       padding: 10px 20px;
@@ -51,13 +46,18 @@
     button:hover {
       background-color: #0056b3;
     }
-
+    /* Кнопки быстрой фильтрации */
+    .filters button[type="button"] {
+      background-color: #28a745;
+    }
+    .filters button[type="button"]:hover {
+      background-color: #218838;
+    }
     .gallery {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
       gap: 20px;
     }
-
     .card {
       background: white;
       padding: 15px;
@@ -65,13 +65,11 @@
       box-shadow: 0 0 8px rgba(0,0,0,0.1);
       text-align: center;
     }
-
     .card img {
       max-width: 100%;
       height: auto;
       margin: 10px 0;
     }
-
     .card a {
       display: inline-block;
       margin-top: 10px;
@@ -84,30 +82,32 @@
   </style>
 </head>
 <body>
-
 <div class="container">
   <h1>🔍 Поиск пакетов по размерам</h1>
-
   <div class="filters">
     <label>Ширина:
       <input type="number" id="min-width" placeholder="Мин"> –
       <input type="number" id="max-width" placeholder="Макс">
     </label>
-
     <label>Высота:
       <input type="number" id="min-height" placeholder="Мин"> –
       <input type="number" id="max-height" placeholder="Макс">
     </label>
-
     <label>Глубина:
       <input type="number" id="min-depth" placeholder="Мин"> –
       <input type="number" id="max-depth" placeholder="Макс">
     </label>
-
     <button onclick="filterPacks()">Фильтровать</button>
     <button onclick="resetFilters()">Сбросить</button>
-  </div>
 
+    <!-- Кнопки быстрой фильтрации -->
+    <button type="button" onclick="applyQuickFilter('bottle')">Бутылочный</button>
+    <button type="button" onclick="applyQuickFilter('a5')">А5</button>
+    <button type="button" onclick="applyQuickFilter('a4')">А4</button>
+    <button type="button" onclick="applyQuickFilter('a3')">А3</button>
+    <button type="button" onclick="applyQuickFilter('a3plus')">А3+</button>
+    <button type="button" onclick="applyQuickFilter('horizontal')">Горизонтальные</button>
+  </div>
   <div id="results" class="gallery"></div>
 </div>
 
@@ -188,15 +188,69 @@
     return parseInt(sizeStr.split("×")[index]);
   }
 
+  function applyQuickFilter(type) {
+    document.getElementById("min-width").value = "";
+    document.getElementById("max-width").value = "";
+    document.getElementById("min-height").value = "";
+    document.getElementById("max-height").value = "";
+    document.getElementById("min-depth").value = "";
+    document.getElementById("max-depth").value = "";
+
+    let mw = NaN, Mw = NaN, mh = NaN, Mh = NaN, md = NaN, Md = NaN;
+
+    switch(type) {
+      case 'bottle':
+        const widths = [90, 95, 100, 110, 125, 130, 140];
+        mw = Math.min(...widths);
+        Mw = Math.max(...widths);
+        md = mw;
+        Md = Mw;
+        break;
+
+      case 'a5':
+        mw = 155; Mw = 230;
+        Mh = 250;
+        break;
+
+      case 'a4':
+        mw = 210; Mw = 265;
+        mh = 300;
+        break;
+
+      case 'a3':
+        mw = 280;
+        mh = 380;
+        break;
+
+      case 'a3plus':
+        mw = 350;
+        break;
+
+      case 'horizontal':
+        // Только горизонтальные (ширина > высота)
+        window.isHorizontalOnly = true;
+        mw = 0; Mw = Infinity;
+        mh = 0; Mh = Infinity;
+        break;
+    }
+
+    if (!isNaN(mw)) document.getElementById("min-width").value = mw;
+    if (!isNaN(Mw)) document.getElementById("max-width").value = Mw;
+    if (!isNaN(mh)) document.getElementById("min-height").value = mh;
+    if (!isNaN(Mh)) document.getElementById("max-height").value = Mh;
+    if (!isNaN(md)) document.getElementById("min-depth").value = md;
+    if (!isNaN(Md)) document.getElementById("max-depth").value = Md;
+
+    filterPacks();
+  }
+
   function displayPacks(packs) {
     const container = document.getElementById("results");
     container.innerHTML = "";
-
     if (packs.length === 0) {
       container.innerHTML = "<p>Ничего не найдено.</p>";
       return;
     }
-
     packs.forEach(pack => {
       const div = document.createElement("div");
       div.className = "card";
@@ -228,6 +282,11 @@
     if (!isNaN(md)) filtered = filtered.filter(p => getDim(p.size, 2) >= md);
     if (!isNaN(Md)) filtered = filtered.filter(p => getDim(p.size, 2) <= Md);
 
+    if (window.isHorizontalOnly) {
+      filtered = filtered.filter(p => getDim(p.size, 0) > getDim(p.size, 1));
+      window.isHorizontalOnly = false;
+    }
+
     displayPacks(filtered);
   }
 
@@ -236,9 +295,7 @@
     displayPacks(allPacks);
   }
 
-  // Инициальное отображение
   displayPacks(allPacks);
 </script>
-
 </body>
 </html>
